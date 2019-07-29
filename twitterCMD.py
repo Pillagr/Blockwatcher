@@ -49,15 +49,12 @@ class Specific:
 
         
         """
-        data1 = b.BTCStart().getUpdate()    #possibly merge data1 and data2 into a list, subscript in outputs
-        data2 = None                        # FIX get TXCOunt from BTCMod etc. 
-        text = f'New Block: {data1[0]}\nHash: {data1[2]}\nTime: {data1[1]}\nSource: Blockstream.info'
-        reply1 = f'It contained {data2} TXs'
-
-
-        
+        data = [b.BTCStart().getUpdate()]    #possibly merge data1 and data2 into a list, subscript in outputs
+                                
+        text = f'New Block: {data[0]}\nHash: {data[2]}\nTime: {data[1]}\nSource: Blockstream.info'
+        reply1 = f'It contained {data[3]} TXs'
         #General().thread(text, reply1)
-        return data1, data2, text, reply1
+        return data, text, reply1
 
     def turn_BW_off(self):  # make this reply to the previous post and possibly retweet itself? 
         """

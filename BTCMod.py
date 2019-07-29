@@ -12,7 +12,7 @@ from math import floor as fl
 
 GENESIS_BLOCK = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
 BASE_URL = "https://blockchain.info/"
-
+# ------- APIS ------- #
 def apiCall(endURL):
     url = BASE_URL + endURL
     try: #Try to get JSON
@@ -30,6 +30,7 @@ def handle_response(response):
     else: 
         return response
 
+# ------- BTCS ------- #
 class BTCStart():
     def getPrice(self):
         url = "https://api.coindesk.com/v1/bpi/currentprice.json"
@@ -73,7 +74,7 @@ class BTCStart():
         
         tx_count = BTCInfo().checkBlock(block_hash)
         #print(f"The most recent block included {tx_count} transactions.")  #TX count
-        return block_height, block_time, block_hash
+        return block_height, block_time, block_hash, tx_count
 
 # ------- INFO ------- #
 class BTCInfo():
@@ -177,23 +178,32 @@ class BTCInfo():
                 delta = balance - new_balance
                 print(f"The Address has sent a Transaction of {delta}!")
 
-class BTCKeys():    #Don't trust yet. If anything, trust WIF format, not Private Key. 
-    def newKeys(self):
-        rand = codecs.encode(os.urandom(32), 'hex').decode()
-        secret_exponent = int('0x'+rand, 0)
-        WIF = encoding.secret_exponent_to_wif(secret_exponent, compressed=False)
-        full_encode = base58.b58decode(WIF)
-        priv_key_full = binascii.hexlify(full_encode)
-        priv_key = str(priv_key_full[2:-8])
-       # print("Private Key: ", priv_key)       dont trust
-       # print(len(priv_key))                   Should be 52, is 67
-        print ('WIF: ' + WIF)
-        print(len(WIF))
-        public_pair = ecdsa.public_pair_for_secret_exponent(ecdsa.secp256k1.generator_secp256k1, secret_exponent)
-        hash160 = encoding.public_pair_to_hash160_sec(public_pair, compressed=True)
-        PubKey = encoding.hash160_sec_to_bitcoin_address(hash160)
-        print('Bitcoin address: %s' % PubKey )
-        print(len(PubKey))
+# ------- DEFS ------- #
+class TransactionStatus: 
+    """Transaction status utility"""
+    def __init__(self, status):
+        self.confirmed = status['confirmed']
+        self.block_height = status['block_height']
+        self.block_hash = status['block_hash']
+        self.block_time = status['block_time']
+
+def get_transaction_status(tx_id):
+    """
+    Request the transaction confirmation status
+    :param str tx_id: transaction ID
+    :return: an instance of :class:`TransactionStatus` class
+    """
+    resource = f'tx/{tx_id}/status'
+    response = apiCall(resource)
+    return TransactionStatus(response)
+
+class Mempool:
+    """ Bitcoin Mempool"""
+    def __init__(self, mempool):
+        self.count = mempool['count']
+        self.vsize = mempool['vsize']
+        self.total_fee = mempool['total_fee']
+        self.fee_histogram = mempool['fee_histogram']
 
     
 
