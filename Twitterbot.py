@@ -3,11 +3,6 @@
 A Twitter Bot to post data about the Bitcoin Blockchain. Other commands also available. 
 """
 import tweepy as tp
-import time
-import os
-import requests
-from datetime import datetime, time, date, timedelta
-#os.chdir("/Users/moi")
 import keyring as k
 
 
