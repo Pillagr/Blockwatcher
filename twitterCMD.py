@@ -116,11 +116,11 @@ class Specific:
 
 if __name__ == "__main__":
     #General().reply("test 2", 1154979739490246657)
-    Specific().get_latest_mtGox()
+    #Specific().get_latest_mtGox()
     #General().get_text(1154982892222713856)
     #Specific().bot_update()
     #Specific().block_watch()
     #General().search("@VoltLN give me the $BTC Price please")
-    #General().post("testing.")
+    General().post("testing. 2")
     #Specific().thread("Starting a second thread. See below. \n$BTC", "Replying to a second thread. See above.", "Third post", "fourt pos", "fif po", "si p", "s")
     pass
