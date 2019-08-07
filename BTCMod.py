@@ -1,191 +1,64 @@
 import requests
-from datetime import datetime, time, date, timedelta
-import time
-#for BTCKey
-import hashlib
-import base58
-import binascii
-from pycoin import ecdsa, encoding
-import os
-import codecs
-from math import floor as fl
+"""
+This module was mostly created by someone else. Working on finding the source.
+"""
 
-GENESIS_BLOCK = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
-BASE_URL = "https://blockchain.info/"
-# ------- APIS ------- #
-def apiCall(endURL):
+BASE_URL = 'https://blockstream.info/api/'
+#API Call
+def call_api(endURL):
+    """
+    Build the API URL and request data
+    :param str endpoint: specific api endpoint to hit
+    :return response: server's reponse to the request
+    """
     url = BASE_URL + endURL
-    try: #Try to get JSON
+    try:  # try to get json data
         response = requests.get(url).json()
-    except ValueError: #if str
+    except ValueError:  # if bytes, convert to str
         response = requests.get(url).content.decode('utf-8')
     except Exception as e:
         response = e
     return handle_response(response)
 
 def handle_response(response):
+    """
+    Responses from blockstream's API are returned in json or str
+    :param response: http response object from requests library
+    :return response: decoded response from api
+    """
     if isinstance(response, Exception):
         print(response)
         return response
-    else: 
+    else:
         return response
 
-# ------- BTCS ------- #
-class BTCStart():
-    def getPrice(self):
-        url = "https://api.coindesk.com/v1/bpi/currentprice.json"
-        response = requests.get(
-            url,
-            headers={"Accept": "application.json"},
-        )
-        data = response.json()
-        bpi = data['bpi']
-        USD = bpi['USD']
-        bitcoin_rate = int(USD['rate_float'])
-        return bitcoin_rate
-    
-    def getHeight(self):
-        endURL = "latestblock"
-        data = apiCall(endURL)
-        block_hash = data['hash']
-        block_time = data['time']
-        block_height = data['height']
-
-        
-        return block_height, block_time, block_hash
-
-    def getUpdate(self):
-        #Price
-        bitcoin_rate = self.getPrice()
-        #halving
-        today = datetime.now()
-        halving = datetime(year = 2020, month = 5, day = 22, hour = 17, minute = 47)
-        delta = halving - today
-        #Block Height
-        block_height = self.getHeight()[0]
-        timestamp = self.getHeight()[1]
-        ts = int(timestamp)
-        block_time = datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-        #print(block_time)
-        block_hash = self.getHeight()[2]
-        # print("Time until Halving:", delta) #Halving Data
-        # print(f"The Price is currently: ${bitcoin_rate}.00") #Price
-        # print(f"The Block Height is {block_height}. The hash was {block_hash}") #Block Height and hash
-        
-        tx_count = BTCInfo().checkBlock(block_hash)
-        #print(f"The most recent block included {tx_count} transactions.")  #TX count
-        return block_height, block_time, block_hash, tx_count
-
-# ------- INFO ------- #
-class BTCInfo():
-    def checkBlock(self, block_hash):
-        endURL = f"rawblock/{block_hash}"
-        data = apiCall(endURL)
-        ver = data['ver']
-        prev_block = data['prev_block']
-        tx_list = data['tx']
-        tx_count = len(tx_list)
-        time = data['time']
-        height = data['height']
-        nonce = data['nonce']
-        return ver, prev_block, tx_count, time, height, nonce  #add tx_list if needed
-
-
-    def practice(self):             #How do i call n variables without running the function n times?
-        ver, prev_block, tx_list = self.checkBlock("000000000000000000168b0d9e2f64bff796a74a44f2efa6095b52eb3bf3e2de")[0]
-        print(ver, prev_block, tx_list)
+#BTC Functions
 
 
 
-    def checkVer(self, block_hash):                 #Get Version 
-        datum = self.checkBlock(block_hash)[0]
-        print(datum)
-    def checkPrev(self, block_hash):                #Get Previous Hash
-        datum = self.checkBlock(block_hash)[1]
-        print(datum) 
-    def countTX(self, block_hash):                  #Get TX Count 
-        datum = self.checkBlock(block_hash)[2]
-        print(datum) 
-    def checkTime(self, block_hash):                #Get Time
-        datum = self.checkBlock(block_hash)[3]
-        print(datum)
-    def checkHeight(self, block_hash):              #Get Height
-        datum = self.checkBlock(block_hash)[4]
-        print(datum)
-    def checkNonce(self, block_hash):               #Get Nonce
-        datum = self.checkBlock(block_hash)[5]
-        print(datum)
 
-    def block_crawler(self):            #Look at all blocks in reverse order
-        block_hash = BTCStart().getHeight()[2]
-        block_height = BTCStart().getHeight()[0]   #Does it hurt to get this from diff class? 
-        block_time = BTCStart().getHeight()[1]
-        
-        block0 = GENESIS_BLOCK
-        while block_hash != block0:         
-            print(f"Block Height: {block_height}        | Block Time: {block_time}        | Block Hash: {block_hash}")
-            prev_block = self.checkBlock(block_hash)[1]
-            block_hash = prev_block
-            block_time = self.checkBlock(block_hash)[3]
-            block_height = self.checkBlock(block_hash)[4]
-            
-    def checkAddr(self):
-        params = self.parameters()
-        addr = input("Please type your Address (No Bech32, sorry): ")
-        endURL = f"rawaddr/{addr}"
-        data = apiCall(endURL)
-        recd = data['total_received']
-        sent = data['total_sent']
-        balance = data['final_balance']
-        #tx_list = data['txs']
-        #tx_count = len(tx_list)
-        n_tx = data['n_tx']
 
-        if "R" in params:
-            print("Total Received: ", recd, "sats")
-        if  "S" in params:
-            print("Total Sent: ", sent, "sats")
-        if "B" in params:
-            print("Current Balance: ", balance, "sats")
-        if "T" in params:
-            print("Transaction Count: ", n_tx, "TXs")
 
-    def parameters(self):
-        params = []
-        for n in range (4):
-            par = input("What parameter would you like to see? [R]eceied Amount - [S]ent Amount - [B]alance - [T]X Count: ")       
-            params.append(par)
-            more = input("Would you like to see another parameter? Y/N:  ")
-            if more == "N":
-                break         
-        return params
-        
-    def watchAddr(self): 
-        addr = input("Please type your Address (No Bech32): ")                             #Could check every block instead? 
-        endURL = f"rawaddr/{addr}"                                                 #from getHeight, if block_hash != new_block_hash:
-        data = apiCall(endURL)
-        balance = data['final_balance']
-        wait = 720
-        print(f"Current Balance: {balance} sats. Updates every {fl(wait/60)} minutes. Now watching...")
-        while True:
-            new_balance = data['final_balance']
-            if new_balance == balance:
-                time.sleep(wait) #12 mins, make 10?
-            elif new_balance > balance: 
-                delta = new_balance - balance
-                print(f"The Address has received a Transaction of {delta}!")
-            elif new_balance < balance:
-                delta = balance - new_balance
-                print(f"The Address has sent a Transaction of {delta}!")
+# ------- BTC ------- #
+def getPrice():
+    url = "https://api.coindesk.com/v1/bpi/currentprice.json"
+    response = requests.get(
+        url,
+        headers={"Accept": "application.json"},
+    )
+    data = response.json()
+    return Price(data)
 
-# ------- DEFS ------- #
-class TransactionStatus: 
-    """Transaction status utility"""
-    def __init__(self, status):
-        self.confirmed = status['confirmed']
-        self.block_height = status['block_height']
-        self.block_hash = status['block_hash']
-        self.block_time = status['block_time']
+# ---- TRANSACTIONS ---- #
+def get_transaction(tx_id):
+    """
+    Request information about a transaction by ID
+    :param str tx_id: transaction ID 
+    :return: an instance of :class:`Transaction` class
+    """
+    resource = f'tx/{tx_id}'
+    tx_data =  call_api(resource)
+    return Transaction(tx_data)
 
 def get_transaction_status(tx_id):
     """
@@ -194,27 +67,369 @@ def get_transaction_status(tx_id):
     :return: an instance of :class:`TransactionStatus` class
     """
     resource = f'tx/{tx_id}/status'
-    response = apiCall(resource)
+    response = call_api(resource)
     return TransactionStatus(response)
 
+def get_transaction_hex(tx_id):
+    """
+    Request the raw transaction in hex
+    :param str tx_id: transaction ID
+    :return: dictionary containing tx hex
+    """
+    resource = f'tx/{tx_id}/hex'
+    response = call_api(resource)
+    return response  # figure this better maybe
+
+def get_transaction_merkle_proof(tx_id):
+    """
+    Request the merkle intrusion proof of a transaction
+    :param str tx_id: transaction ID
+    :return: an instance of :class:`TransactionMerkle` class
+    """
+    resource = f'tx/{tx_id}/merkle-proof'
+    response = call_api(resource)
+    return TransactionMerkleProof(response)
+
+def get_transaction_output_status(tx_id, vout):
+    """
+    Request the spending status of a transaction output
+    :param str tx_id: transaction ID
+    :param str vout: transaction output
+    :return: an instance of :class:`TransactionOutput` class
+    """
+    resource = f'tx/{tx_id}/outspend/{vout}'
+    response = call_api(resource)
+    return TransactionOutput(response)
+
+def get_all_transaction_outputs_statuses(tx_id):
+    """
+    Request the spending status of all transaction outputs
+    :param str tx_id: transaction ID
+    :return list: a list of :class:`TransactionOutput` objects
+    """
+    resource = f'tx/{tx_id}/outspends'
+    response = call_api(resource)
+    outspends = []
+    for output in response:
+        outspends.append(TransactionOutput(output))
+    return outspends
+
+def post_transaction():                         #FIX
+    """
+    Broadcast a raw transaction to the network
+    """
+    pass
+# ---- ADDRESS ---- #
+def get_address(address):
+    """
+    Request address information
+    :param str address: a bitcoin address/scripthash
+    :return: an instance of :class:`Address` class
+    """
+    resource = f'address/{address}'
+    response = call_api(resource)
+    return Address(response)
+
+def get_address_transactions(address):
+    """
+    Request all transactions for an address, newest first
+    """
+    resource = f'address/{address}/txs'
+    response = call_api(resource)
+    transactions = []
+    for tx in response:
+        transactions.append(Transaction(tx))
+    return transactions
+
+def get_confirmed_transaction_history(address, ls_tx_id=''):
+    """
+    Request confirmed transaction history for an address, newest first
+    25 per page
+    :param str address: a bitcoin address
+    :param str ls_tx_id: last transaction ID
+    :return list: 
+    """
+    resource = f'address/{address}/txs/chain/{ls_tx_id}'
+    response = call_api(resource)
+    confirmed_transactions = []
+    for tx in response:
+        confirmed_transactions.append(Transaction(tx))
+    return confirmed_transactions
+
+def get_address_mempool(address):
+    """
+    Request unconfirmed transaction history of an address, newest first
+    up to 50 transactions no paging
+    :param str address: a bitcoin address
+    :return list: a list of :class:`Transaction` objects
+    """
+    resource = f'address/{address}/txs/mempool'
+    response = call_api(resource)
+    mempool_transactions = []
+    for tx in response:
+        mempool_transactions.append(Transaction(tx))
+    return mempool_transactions
+
+def get_address_utxo(address):
+    """
+    Request the list of unspent transaction outputs associated with
+    an address
+    :param str address: a bitcoin address
+    :return list: a list of :class:`UTXO` objects
+    """
+    resource = f'address/{address}/utxo'
+    response = call_api(resource)
+    utxo_list = []
+    for utxo in response:
+        utxo_list.append(UTXO(utxo))
+    return utxo_list
+# ---- BLOCKS ---- #
+def get_block_by_hash(block_hash):
+    """
+    Request a given block by hash
+    :param str block_hash: a bitcoin block hash
+    :return: an instance of :class:`Block` class
+    """
+    resource = f'block/{block_hash}'
+    response = call_api(resource)
+    return Block(response)
+
+def get_block_by_height(height):
+    """
+    Request a given block by height
+    :param str height: a bitcoin block height
+    :return: an instance of :class:`Block` class
+    """
+    block_hash = get_block_hash_from_height(height)
+    resource = f'block/{block_hash}'
+    response = call_api(resource)
+    return Block(response)
+
+def get_block_hash_from_height(height):
+    """
+    Request a block hash by specifying the height
+    :param str height: a bitcoin block height
+    :return: a bitcoin block address
+    """
+    resource = f'block-height/{height}'
+    return call_api(resource)
+
+def get_block_status(block_hash):
+    """
+    Request the block status
+    :param str block_hash: a bitcoin block hash
+    :return: an instance of :class:`BlockStatus` class
+    """
+    resource = f'block/{block_hash}/status'
+    response = call_api(resource)
+    return BlockStatus(response)
+
+def get_block_transactions(block_hash, start_index='0'):
+    """
+    Request a list of transactions in a block (up to 25)
+    :param str block_hash: a bitcoin block hash
+    :param str start_index: index of transaction list to start from
+    """
+    resource = f'block/{block_hash}/txs/{start_index}'
+    response = call_api(resource)
+    transactions = []
+    for tx in response:
+        transactions.append(Transaction(tx))
+    return transactions
+
+def get_transaction_ids(block_hash):
+    """
+    Request a list of all transaction IDs in a block
+    :param str block_hash: a bitcoin block hash
+    :return: a list of transaction IDs in the block
+    """
+    resource = f'block/{block_hash}/txids'
+    response = call_api(resource)
+    return response
+
+def get_blocks(start_height=''):
+    """
+    Request the 10 newest blocks starting at tip (most recent)
+    or at start_height (optional)
+    :param str start_height: block height
+    :return: a list of :class:`Block` objects
+    """
+    resource = f'blocks/{start_height}'
+    response = call_api(resource)
+    blocks = []
+    for block in response:
+        blocks.append(Block(block))
+    return blocks
+
+def get_last_block_height():
+    """
+    Request the height of the last block
+    :return dict: most recent block height in bitcoin
+    """
+    resource = 'blocks/tip/height'
+    return call_api(resource)
+
+def get_last_block_hash():
+    """
+    Request the hash of the last block
+    """
+    resource = 'blocks/tip/hash'
+    return call_api(resource)
+
+# ---- MEMPOOL ---- #
+def get_mempool():
+    """
+    Request mempool backlog statistics
+    """
+    response = call_api('mempool')
+    return Mempool(response)
+
+def get_mempool_transaction_ids():
+    """
+    Request the full list of transactions IDs currently in the mempool,
+    as an array
+    :return list: a list of transaction IDs
+    """
+    resource = 'mempool/txids'
+    return call_api(resource)
+
+def get_mempool_recent_transactions():
+    """
+    Request a list of the last 10 transactions to enter the mempool
+    :return list: a list of transaction IDs
+    """
+    resource = 'mempool/recent'
+    response = call_api(resource)
+    transactions = []
+    for tx in response:
+        transactions.append(MempoolRecent(tx))
+    return transactions
+#Fees
+def get_fee_estimates():
+    """
+    Request an object where the key is the confirmation target (in number
+    of blocks) and the value is estimated fee rate (in sat/vB)
+    :return: an instance of :class:`FeeEstimate` class
+    """
+    response = call_api('fee-estimates')
+    return FeeEstimates(response)
+
+#Classes
+class BlockStatus:
+    """Bitcoin block status utility."""
+    def __init__(self, status):
+        self.in_best_chain = status['in_best_chain']
+        self.height = status['height']
+        self.next_best = status['next_best']
+
+class Block:
+    """Bitcoin block utility class"""
+    def __init__(self, block):
+        self.id = block['id']
+        self.height = block['height']
+        self.version = block['version']
+        self.timestamp = block['timestamp']
+        self.tx_count = block['tx_count']
+        self.size = block['size']
+        self.weight = block['weight']
+        self.merkle_root = block['merkle_root']
+        self.previous_block_hash = block['previousblockhash']
+        self.nonce = block['nonce']
+        self.bits = block['bits']
+
+class Address:
+    """Bitcoin Address utility class."""
+    def __init__(self, address):
+        self.address = address['address']  # str
+        self.chain_stats = address['chain_stats']  # dict
+        self.mempool_stats = address['mempool_stats']  # dict
+
+class UTXO:
+    """Bitcoin UTXO utility class."""
+    def __init__(self, utxo):
+        self.tx_id = utxo['txid']
+        self.vout = utxo['vout']
+        self.status = TransactionStatus(utxo['status'])
+        self.value = utxo['value']
+
+class TransactionStatus:
+    """Transaction status utility."""
+    def __init__(self, status):
+        self.confirmed = status['confirmed']
+        self.block_height = status['block_height']
+        self.block_hash = status['block_hash']
+        self.block_time = status['block_time']
+
+class TransactionMerkleProof:
+    """Tx Merkle proof utility."""
+    def __init__(self, merkle):
+        self.block_height = merkle['block_height']
+        self.merkle = merkle['merkle']
+        self.pos = merkle['pos']
+
+class TransactionOutput:
+    """Tx Output utility."""
+    def __init__(self, output):
+        self.spend = output['spent']
+        self.tx_id = output['txid']
+        self.vin = output['vin']
+        self.status = TransactionStatus(output['status'])
+
+class Transaction:
+    """Bitcoin Transaction utility class."""
+    def __init__(self, transaction):
+        self.id = transaction['txid']
+        self.version = transaction['version']
+        self.locktime = transaction['locktime']
+        self.vin = transaction['vin']
+        self.vout = transaction['vout']
+        self.size = transaction['size']
+        self.weight = transaction['weight']
+        self.fee = transaction['fee']
+        self.status = TransactionStatus(transaction['status'])
+
 class Mempool:
-    """ Bitcoin Mempool"""
+    """Bitcoin Mempool utility class."""
     def __init__(self, mempool):
         self.count = mempool['count']
         self.vsize = mempool['vsize']
         self.total_fee = mempool['total_fee']
         self.fee_histogram = mempool['fee_histogram']
 
-    
+class MempoolRecent:
+    """Recent TXs in mempool utility."""
+    def __init__(self, info):
+        self.tx_id = info['txid']
+        self.fee = info['fee']
+        self.vsize = info['vsize']
+        self.value = info['value']
+
+class FeeEstimates:
+    """Fee Estimates utility class."""
+    def __init__(self, data):
+        self.two_blocks = data['2']
+        self.three_blocks = data['3']
+        self.four_blocks = data['4']
+        self.six_blocks = data['6']
+        self.ten_blocks = data['10']
+        self.twenty_blocks = data['20']
+        self.onefourfour_blocks = data['144']
+        self.fivezerofour_blocks = data['504']
+        self.tenzeroeight_blocks = data['1008']
+
+class Price:
+    def __init__(self, data):
+        self.time = data['time']['updated']
+        self.bpi = data['bpi']
+        self.USD = self.bpi['USD']['rate_float']
+        self.GBP = self.bpi['GBP']['rate_float']
+        self.EUR = self.bpi['EUR']['rate_float']
+        
 
 if __name__ == "__main__":
-    #BTCStart().getUpdate()
-    #BTCInfo().checkAddr()
-    #BTCInfo().countTX("000000000000000000168b0d9e2f64bff796a74a44f2efa6095b52eb3bf3e2de")
-    #BTCInfo().block_crawler()
-    #BTCKeys().newKeys()
-    #BTCInfo().practice()
-    #BTCInfo().watchAddr()
-    #BTCStart().getHeight()
-    BTCStart().getUpdate()
+    #print(get_address("17A16QmavnUfCW11DAApiJxp7ARnxN5pGX").chain_stats['funded_txo_count'])
+
+
+
+
     pass
