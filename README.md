@@ -21,3 +21,5 @@ The organization of this project needs work. But here's how it's supposed to loo
 2. The Twitterbot.py module is used solely for accessing the Twitter API. Possibly, it could also be used to store all the imports
 
 3. The twitterCMD.py file is where all the useable functions are actually defined. I broke them up into General and Specific classes (this may be an improper use of classes?). The Specific functions may later be moved to a new script unique to each bot functionality. 
+
+4. The Stream.py file establishes the StreamListener to listen to new tweets on a live basis. This is where we set the parameters for what tweets to respond to and how. 
