@@ -1,4 +1,6 @@
 import requests
+import time
+import pync as p
 """
 This module was mostly created by someone else. Working on finding the source.
 """
@@ -32,12 +34,69 @@ def handle_response(response):
     else:
         return response
 
+def notify(text, title, opn=None):
+    #Notifcations
+    p.notify(text, title=title, open=opn)
+
+
 #BTC Functions
+def watch_for_conf(tx_id, confs=1):
+    x = False
+    y = False
+    n = 0
+    title = "Watching for Confs..."
+    while not x:
+        n +=1
+        t = 30*n
+        tx = get_transaction_status(tx_id)
+        txt = f"TX included in block: {tx.block_height}.\nLink: "
+        if tx.confirmed:
+            notify(txt, title=title, open=f"https://blockstream.info/tx/{tx_id}")
+            print(txt)
+            x = True
+            break
+        else: 
+            time.sleep(30)
+            print(f"attempt: {n}, {t}s elapsed")
+    if confs < 1:
+        tx_height = tx.block_height
+        while not y:
+            time.sleep(60)
+            new_height = get_last_block_height()
+            real_confs = new_height - tx_height
+            if confs <= real_confs:
+                text = f"Success! TX has reached {confs} confirmations."
+                notify(text, title, opn=f"https://blockstream.info/tx/{tx_id}")
+                print(text)
+                y = True
+                break
+            else: 
+                text = f"New block. TX now has {real_confs} confirmations."
+                notify(text, title, opn=f"https://blockstream.info/tx/{tx_id}")
+                print(text)
 
-
-
-
-
+def price_watch():
+    MARGIN = 800
+    TIME = 900
+    start_price = getPrice().USD
+    title = "Price Watch"
+    text = f"Price: ${start_price}"
+    notify(text, title, opn="https://coinmarketcap.com/currencies/bitcoin/")
+    while True:
+        n = 0
+        time.sleep(TIME)
+        new_price = getPrice().USD
+        if new_price >= (start_price + MARGIN):
+            text = f"BTC fell to ${new_price}" 
+            notify(text, title, opn="https://coinmarketcap.com/currencies/bitcoin/")
+        elif new_price <= (start_price - MARGIN):
+            text = f"BTC rose to ${new_price}" 
+            notify(text, title, opn="https://coinmarketcap.com/currencies/bitcoin/")
+        if n%2 == 1:
+            text = f"BTC is now at ${new_price}"
+            notify(text, title, opn="https://coinmarketcap.com/currencies/bitcoin/")
+            start_price = new_price
+        n +=1
 
 # ------- BTC ------- #
 def getPrice():
@@ -425,11 +484,7 @@ class Price:
         self.GBP = self.bpi['GBP']['rate_float']
         self.EUR = self.bpi['EUR']['rate_float']
         
-
 if __name__ == "__main__":
     #print(get_address("17A16QmavnUfCW11DAApiJxp7ARnxN5pGX").chain_stats['funded_txo_count'])
-
-
-
-
-    pass
+    # watch_for_conf("5a883845046c545be98930fd2008c033b31da14c6cfffc31790bd7eaa4d4cd3b", confs=4)
+    price_watch()

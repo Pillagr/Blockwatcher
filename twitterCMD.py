@@ -32,7 +32,6 @@ class General:
         print(result)
         return data, result, tweet_id
 
-
 class Switch:
     def __init__(self):
         self.ON = True
@@ -116,7 +115,8 @@ class Specific:
                 new_block_id = tip
                 blockcount +=1
             return data
-    def post_price(self):
+    
+            def post_price(self):
         """
         Use basic Coindesk API call to give price.  
         """
