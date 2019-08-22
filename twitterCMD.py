@@ -156,7 +156,27 @@ class Specific:
                 General().send_DM(recipID, (text[0]+text[1]))
                 blockcount +=1
 
-
+    def price_watch(self, currency):    # add time
+        MARGIN = 800
+        TIME = 900
+        start_price = b.getPrice().currency
+        while True:
+            n = 0
+            time.sleep(TIME)
+            new_price = b.getPrice().currency
+            if new_price >= (start_price + MARGIN):
+                text = f"BTC fell to ${new_price}" 
+                General().post(text)
+                start_price = new_price
+            elif new_price <= (start_price - MARGIN):
+                text = f"BTC rose to ${new_price}" 
+                General().post(text)
+                start_price = new_price
+            if n%2 == 1:
+                text = f"BTC is now at ${new_price}"
+                General().post(text)
+                start_price = new_price
+            n +=1
     
 
 

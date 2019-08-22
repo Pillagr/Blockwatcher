@@ -98,6 +98,11 @@ def price_watch():
             start_price = new_price
         n +=1
 
+def check_price():
+    title = "Pice Check"
+    price = getPrice().USD
+    text = f"1 BTC = ${price}"
+    notify(text, title, opn="https://coinmarketcap.com/currencies/bitcoin/")
 # ------- BTC ------- #
 def getPrice():
     url = "https://api.coindesk.com/v1/bpi/currentprice.json"
@@ -487,4 +492,4 @@ class Price:
 if __name__ == "__main__":
     #print(get_address("17A16QmavnUfCW11DAApiJxp7ARnxN5pGX").chain_stats['funded_txo_count'])
     # watch_for_conf("5a883845046c545be98930fd2008c033b31da14c6cfffc31790bd7eaa4d4cd3b", confs=4)
-    price_watch()
+    check_price()
